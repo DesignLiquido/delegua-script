@@ -1,0 +1,1 @@
+export type ScriptType = 'text/delegua' | 'texto/delegua';
