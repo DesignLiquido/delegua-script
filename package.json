@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "esbuild fontes/delegua-script.ts --bundle --platform=browser --format=iife --target=es2019 --global-name=DeleguaScript --outfile=dist/delegua-script.js",
-    "build:min": "esbuild fontes/delegua-script.ts --bundle --platform=browser --format=iife --target=es2019 --global-name=DeleguaScript --minify --outfile=dist/delegua-script.min.js",
+    "empacotar": "esbuild fontes/delegua-script.ts --bundle --platform=browser --format=iife --target=es2019 --global-name=DeleguaScript --outfile=dist/delegua-script.js",
+    "empacotar:min": "esbuild fontes/delegua-script.ts --bundle --platform=browser --format=iife --target=es2019 --global-name=DeleguaScript --minify --outfile=dist/delegua-script.min.js",
     "watch": "esbuild fontes/delegua-script.ts --bundle --platform=browser --format=iife --target=es2019 --global-name=DeleguaScript --outfile=dist/delegua-script.js --watch",
-    "exemplo": "yarn build && http-server . -p 8080 -c-1 -o /index.html",
+    "continuo": "yarn empacotar && http-server . -p 8080 -c-1 -o /index.html",
     "publicar-npm": "npm publish ./dist --access public",
     "testes": "jest --runInBand",
     "testes:watch": "jest --watch"
