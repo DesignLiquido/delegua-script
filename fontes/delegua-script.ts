@@ -1,4 +1,4 @@
-import { DeleguaApi, ErroExecucaoDeleguaInterface, ResultadoExecucaoDeleguaInterface, OpcoesTempoExecucaoDeleguaInterface, OpcoesDeleguaScriptInterface } from "./interfaces";
+import { DeleguaApi, ErroExecucaoDeleguaInterface, ResultadoExecucaoDeleguaInterface, OpcoesTempoExecucaoDeleguaInterface, OpcoesDeleguaScriptInterface, ImportacaoDomResolvida, InformacaoElementoSintaticoSimplificada } from "./interfaces";
 import { ScriptType } from "./tipos";
 
 declare global {
@@ -28,6 +28,95 @@ export function extrairMensagemErro(erro: unknown): string {
   } catch {
     return 'Erro desconhecido';
   }
+}
+
+export function extrairImportacoesDeDom(codigo: string): ImportacaoDomResolvida {
+  const linhas = normalizarCodigoParaLinhas(codigo);
+  const simbolosImportados = new Set<string>();
+  const linhasSemImportacoes: string[] = [];
+
+  for (const linha of linhas) {
+    const correspondenciaImportacao = linha.match(/^\s*importar\s*\{\s*([^}]+)\s*\}\s*de\s+dom\s*;?\s*$/i);
+
+    if (!correspondenciaImportacao) {
+      linhasSemImportacoes.push(linha);
+      continue;
+    }
+
+    const listaDeSimbolos = correspondenciaImportacao[1]
+      .split(',')
+      .map((simbolo) => simbolo.trim())
+      .filter((simbolo) => simbolo.length > 0);
+
+    for (const simbolo of listaDeSimbolos) {
+      simbolosImportados.add(simbolo);
+    }
+  }
+
+  return {
+    codigoSemImportacoes: linhasSemImportacoes.join('\n'),
+    simbolosImportados: [...simbolosImportados],
+  };
+}
+
+export function criarDescritoresSintaticosDom(): Record<string, InformacaoElementoSintaticoSimplificada> {
+  return {
+    bind: {
+      nome: 'bind',
+      tipo: 'qualquer',
+      subElementos: [
+        { nome: 'alvo', tipo: 'qualquer' },
+        { nome: 'evento', tipo: 'texto' },
+        { nome: 'callback', tipo: 'função' },
+      ],
+    },
+    document: {
+      nome: 'document',
+      tipo: 'qualquer',
+      subElementos: [],
+    },
+    alert: {
+      nome: 'alert',
+      tipo: 'qualquer',
+      subElementos: [{ nome: 'mensagem', tipo: 'qualquer' }],
+    },
+  };
+}
+
+export function registrarImportacoesDeDomNoAvaliador(avaliadorSintatico: unknown, simbolosImportados: string[]): void {
+  if (simbolosImportados.length === 0) {
+    return;
+  }
+
+  const avaliador = avaliadorSintatico as {
+    inicializarPilhaEscopos?: () => void;
+    pilhaEscopos?: {
+      definirInformacoesVariavel: (nome: string, informacoes: InformacaoElementoSintaticoSimplificada) => void;
+    };
+  };
+
+  const inicializadorOriginal = avaliador.inicializarPilhaEscopos;
+  if (typeof inicializadorOriginal !== 'function') {
+    throw new Error('Avaliador sintático não expõe inicializarPilhaEscopos().');
+  }
+
+  const descritoresDom = criarDescritoresSintaticosDom();
+
+  avaliador.inicializarPilhaEscopos = function inicializarPilhaEscoposComDom(this: typeof avaliador) {
+    inicializadorOriginal.call(this);
+
+    if (!this.pilhaEscopos?.definirInformacoesVariavel) {
+      throw new Error('Avaliador sintático não expõe pilhaEscopos.definirInformacoesVariavel().');
+    }
+
+    for (const simboloImportado of simbolosImportados) {
+      if (!(simboloImportado in descritoresDom)) {
+        throw new Error(`Símbolo '${simboloImportado}' não existe no módulo dom.`);
+      }
+
+      this.pilhaEscopos.definirInformacoesVariavel(simboloImportado, descritoresDom[simboloImportado]);
+    }
+  };
 }
 
 class DeleguaTempoExecucaoNavegador {
@@ -172,12 +261,17 @@ class DeleguaTempoExecucaoNavegador {
     };
 
     try {
+      const importacoesDeDom = extrairImportacoesDeDom(codigo);
       const delegua = window.Delegua;
       const lexador = new delegua.Lexador();
       const avaliadorSintatico = new delegua.AvaliadorSintatico();
       const interpretador = new delegua.Interpretador(window.location.pathname, false, escrever);
 
-      const retornoLexador = lexador.mapear(normalizarCodigoParaLinhas(codigo), hashArquivo);
+      registrarImportacoesDeDomNoAvaliador(avaliadorSintatico, importacoesDeDom.simbolosImportados);
+
+      this.registrarImportacoesDeDom(interpretador, importacoesDeDom.simbolosImportados);
+
+      const retornoLexador = lexador.mapear(normalizarCodigoParaLinhas(importacoesDeDom.codigoSemImportacoes), hashArquivo);
       if (retornoLexador.erros.length > 0) {
         erros.push({
           etapa: 'lexador',
@@ -223,6 +317,119 @@ class DeleguaTempoExecucaoNavegador {
       erros,
       tempoMs,
     };
+  }
+
+  private registrarImportacoesDeDom(interpretador: unknown, simbolosImportados: string[]): void {
+    if (simbolosImportados.length === 0) {
+      return;
+    }
+
+    const pilhaEscopos = (interpretador as { pilhaEscoposExecucao?: { definirVariavel: (nome: string, valor: unknown) => void } })
+      .pilhaEscoposExecucao;
+
+    if (!pilhaEscopos?.definirVariavel) {
+      throw new Error('Não foi possível acessar o escopo global do interpretador para registrar o módulo dom.');
+    }
+
+    const simbolosDom = this.criarSimbolosDom(interpretador);
+
+    for (const simboloImportado of simbolosImportados) {
+      if (!(simboloImportado in simbolosDom)) {
+        throw new Error(`Símbolo '${simboloImportado}' não existe no módulo dom.`);
+      }
+
+      pilhaEscopos.definirVariavel(simboloImportado, simbolosDom[simboloImportado]);
+    }
+  }
+
+  private criarSimbolosDom(interpretador: unknown): Record<string, unknown> {
+    const deleguaComEstruturas = window.Delegua as unknown as {
+      FuncaoPadrao?: new (valorAridade: number, funcao: (...argumentos: unknown[]) => unknown) => unknown;
+    };
+
+    const criarFuncaoPadrao = (valorAridade: number, funcao: (...argumentos: unknown[]) => unknown) => {
+      if (deleguaComEstruturas.FuncaoPadrao) {
+        return new deleguaComEstruturas.FuncaoPadrao(valorAridade, funcao);
+      }
+
+      return funcao;
+    };
+
+    const bind = criarFuncaoPadrao(3, async (_visitante: unknown, alvo: unknown, evento: unknown, funcao: unknown) => {
+      const elementoDom = this.resolverElementoDom(alvo);
+      if (!elementoDom) {
+        return null;
+      }
+
+      const nomeEvento = String(this.resolverValorDom(evento));
+      const callbackDelegua = this.resolverValorDom(funcao);
+
+      elementoDom.addEventListener(nomeEvento, async (eventoDom: Event) => {
+        try {
+          if (callbackDelegua && typeof (callbackDelegua as { chamar?: unknown }).chamar === 'function') {
+            await (callbackDelegua as { chamar: (visitante: unknown, argumentos: unknown[]) => Promise<unknown> }).chamar(
+              interpretador,
+              [eventoDom]
+            );
+            return;
+          }
+
+          if (typeof callbackDelegua === 'function') {
+            await callbackDelegua(eventoDom);
+          }
+        } catch (erro) {
+          console.error('[delegua-script] Erro ao executar callback de bind():', erro);
+        }
+      });
+
+      return null;
+    });
+
+    const alerta = criarFuncaoPadrao(1, (_visitante: unknown, mensagem: unknown) => {
+      window.alert(String(this.resolverValorDom(mensagem)));
+      return null;
+    });
+
+    return {
+      bind,
+      document: window.document,
+      alert: alerta,
+    };
+  }
+
+  private resolverValorDom(valor: unknown): unknown {
+    if (valor && typeof valor === 'object' && 'valor' in (valor as Record<string, unknown>)) {
+      return (valor as { valor: unknown }).valor;
+    }
+
+    return valor;
+  }
+
+  private resolverElementoDom(alvo: unknown): HTMLElement | Document | null {
+    const alvoResolvido = this.resolverValorDom(alvo);
+
+    if (typeof alvoResolvido === 'string') {
+      return document.getElementById(alvoResolvido) ?? document.querySelector(alvoResolvido);
+    }
+
+    if (alvoResolvido === window.document) {
+      return window.document;
+    }
+
+    if (alvoResolvido instanceof HTMLElement) {
+      return alvoResolvido;
+    }
+
+    if (
+      alvoResolvido &&
+      typeof alvoResolvido === 'object' &&
+      'addEventListener' in (alvoResolvido as Record<string, unknown>) &&
+      typeof (alvoResolvido as { addEventListener?: unknown }).addEventListener === 'function'
+    ) {
+      return alvoResolvido as HTMLElement;
+    }
+
+    return null;
   }
 
   private proximoIdScript(): string {

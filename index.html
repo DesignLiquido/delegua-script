@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Delégua Script (TypeScript)</title>
+    <title>Delégua Script</title>
     <style>
       body {
         margin: 0;
@@ -40,14 +40,21 @@
     <main>
       <h1>Delégua em script tags</h1>
       <p>Este exemplo usa o runtime em TypeScript e executa Delégua no navegador.</p>
+      <button id="botao-alerta">Clique para testar bind() + alert()</button>
       <pre id="saida"></pre>
     </main>
 
     <script type="text/delegua" id="exemplo-principal">
+importar { bind, document, alert } de dom
+
 escreva("Olá do Delégua Script!")
 var v = [1, 2, 3, 4, 5]
 var funcaoPotenciasDeDois = funcao (n) { retorna n ** 2 }
 escreva(v.mapear(funcaoPotenciasDeDois))
+
+bind("#botao-alerta", "click", funcao () {
+  alert("Evento de DOM acionado por Delégua!")
+})
     </script>
 
     <script src="./node_modules/@designliquido/delegua/umd/delegua.js"></script>

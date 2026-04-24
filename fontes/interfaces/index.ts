@@ -1,5 +1,7 @@
 export * from './delegua-script-interface';
 export * from './erro-execucao-delegua-interface';
+export * from './importacao-dom-resolvida-interface';
+export * from './informacao-elemento-sintatico-simplificada-interface';
 export * from './opcoes-delegua-script-interface';
 export * from './opcoes-tempo-execucao-delegua-interface';
 export * from './resultado-avaliador-sintatico-delegua-interface';
