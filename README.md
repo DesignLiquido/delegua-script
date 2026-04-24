@@ -17,11 +17,13 @@ yarn
 
 ```bash
 yarn typecheck
-yarn build
-yarn build:min
+yarn empacotar
+yarn empacotar:min
 yarn watch
 yarn testes
 yarn testes:watch
+yarn publicar-npm:dry-run
+yarn publicar-npm
 ```
 
 ## Uso básico
@@ -29,7 +31,7 @@ yarn testes:watch
 1. Gere o bundle do runtime:
 
 ```bash
-yarn build
+yarn empacotar
 ```
 
 2. Inclua o UMD da Delégua e o runtime compilado na página:
@@ -57,10 +59,19 @@ O runtime expõe:
 Opções principais de `window.delegua()`:
 
 - `ids: string[]`: executa somente scripts com IDs específicos.
-- `scriptTypes: ('text/delegua' | 'text/delegua3')[]`: tipos de script aceitos.
-- `output(texto, info)`: callback para capturar saída de `escreva()`.
-- `autoStart: boolean`: controla auto-execução no carregamento.
-- `onScriptStart(info)` / `onScriptEnd(resultado)`: hooks de ciclo de vida.
+- `tiposDeScript: ('text/delegua' | 'texto/delegua')[]`: tipos de script aceitos.
+- `saida(texto, info)`: callback para capturar saída de `escreva()`.
+- `autoIniciar: boolean`: controla auto-execução no carregamento.
+- `aoIniciarScript(info)` / `aoFinalizarScript(resultado)`: hooks de ciclo de vida.
+
+## Publicação no npm
+
+1. Atualize a versão em package.json para a release que será publicada.
+2. Faça login no npm com `npm login`.
+3. Valide o artefato final com `yarn publicar-npm:dry-run`.
+4. Publique com `yarn publicar-npm`.
+
+O comando de publicação agora gera automaticamente um package.json enxuto em dist, copia README.md e LICENSE, e publica apenas o artefato pronto para consumo no navegador.
 
 ## Exemplo pronto
 

@@ -1,13 +1,28 @@
 {
   "name": "@designliquido/delegua-script",
   "version": "0.0.0",
+  "description": "Tempo de execução de navegador para executar Delégua em tags <script> HTML.",
+  "license": "MIT",
+  "homepage": "https://github.com/DesignLiquido/delegua-script#readme",
+  "bugs": {
+    "url": "https://github.com/DesignLiquido/delegua-script/issues"
+  },
+  "keywords": [
+    "delegua",
+    "browser",
+    "umd",
+    "html",
+    "runtime"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "empacotar": "esbuild fontes/delegua-script.ts --bundle --platform=browser --format=iife --target=es2019 --global-name=DeleguaScript --outfile=dist/delegua-script.js",
     "empacotar:min": "esbuild fontes/delegua-script.ts --bundle --platform=browser --format=iife --target=es2019 --global-name=DeleguaScript --minify --outfile=dist/delegua-script.min.js",
     "watch": "esbuild fontes/delegua-script.ts --bundle --platform=browser --format=iife --target=es2019 --global-name=DeleguaScript --outfile=dist/delegua-script.js --watch",
     "continuo": "yarn empacotar && http-server . -p 8080 -c-1 -o /index.html",
-    "publicar-npm": "npm publish ./dist --access public",
+    "preparar-publicacao": "node scripts/preparar-publicacao.cjs",
+    "publicar-npm:dry-run": "yarn empacotar && yarn empacotar:min && yarn preparar-publicacao && npm publish ./dist --access public --dry-run",
+    "publicar-npm": "yarn empacotar && yarn empacotar:min && yarn preparar-publicacao && npm publish ./dist --access public",
     "testes": "jest --runInBand",
     "testes:watch": "jest --watch"
   },
