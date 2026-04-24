@@ -101,6 +101,9 @@ dist
 # vitepress build output
 **/.vitepress/dist
 
+# GitHub Pages artefact
+site/
+
 # vitepress cache directory
 **/.vitepress/cache
 

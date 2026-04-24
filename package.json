@@ -4,6 +4,10 @@
   "description": "Tempo de execução de navegador para executar Delégua em tags <script> HTML.",
   "license": "MIT",
   "homepage": "https://github.com/DesignLiquido/delegua-script#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/DesignLiquido"
+  },
   "bugs": {
     "url": "https://github.com/DesignLiquido/delegua-script/issues"
   },
@@ -21,6 +25,9 @@
     "watch": "esbuild fontes/delegua-script.ts --bundle --platform=browser --format=iife --target=es2019 --global-name=DeleguaScript --outfile=dist/delegua-script.js --watch",
     "continuo": "yarn empacotar && http-server . -p 8080 -c-1 -o /index.html",
     "preparar-publicacao": "node scripts/preparar-publicacao.cjs",
+    "preparar-github-pages": "yarn empacotar && node scripts/preparar-github-pages.cjs",
+    "publicar-github-pages:dry-run": "yarn preparar-github-pages",
+    "publicar-github-pages": "yarn preparar-github-pages && gh-pages -d site -b gh-pages --dotfiles",
     "publicar-npm:dry-run": "yarn empacotar && yarn empacotar:min && yarn preparar-publicacao && npm publish ./dist --access public --dry-run",
     "publicar-npm": "yarn empacotar && yarn empacotar:min && yarn preparar-publicacao && npm publish ./dist --access public",
     "testes": "jest --runInBand",
@@ -38,6 +45,7 @@
     "@designliquido/delegua": "^1.18.4",
     "@types/jest": "^30.0.0",
     "esbuild": "^0.28.0",
+    "gh-pages": "^6.3.0",
     "http-server": "^14.1.1",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",

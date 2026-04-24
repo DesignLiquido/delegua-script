@@ -22,6 +22,9 @@ yarn empacotar:min
 yarn watch
 yarn testes
 yarn testes:watch
+yarn preparar-github-pages
+yarn publicar-github-pages:dry-run
+yarn publicar-github-pages
 yarn publicar-npm:dry-run
 yarn publicar-npm
 ```
@@ -72,6 +75,20 @@ Opções principais de `window.delegua()`:
 4. Publique com `yarn publicar-npm`.
 
 O comando de publicação agora gera automaticamente um package.json enxuto em dist, copia README.md e LICENSE, e publica apenas o artefato pronto para consumo no navegador.
+
+## Publicação no GitHub Pages
+
+Use o comando `yarn publicar-github-pages`.
+
+Para validar localmente o artefato do Pages antes de publicar:
+
+```bash
+yarn publicar-github-pages:dry-run
+npx http-server site -p 8080 -c-1 -o /index.html
+```
+
+O comando de publicação envia apenas o conteúdo de site para a branch `gh-pages`.
+O comando `publicar-github-pages:dry-run` não faz a publicação; ele apenas reconstrói o artefato local em site.
 
 ## Exemplo pronto
 
