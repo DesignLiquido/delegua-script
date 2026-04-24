@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delégua Script</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(120deg, #f5f7fa, #e4ecf7);
+        color: #0f172a;
+      }
+
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+        padding: 20px;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      pre {
+        background: #0b1020;
+        color: #d6e6ff;
+        padding: 16px;
+        border-radius: 8px;
+        min-height: 96px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Delégua em script tags</h1>
+      <p>Este exemplo usa o runtime em TypeScript e executa Delégua no navegador.</p>
+      <button id="botao-alerta">Clique para testar bind() + alert()</button>
+      <pre id="saida"></pre>
+    </main>
+
+    <script type="text/delegua" id="exemplo-principal">
+importar { bind, document, alert } de dom
+
+escreva("Olá do Delégua Script!")
+var v = [1, 2, 3, 4, 5]
+var funcaoPotenciasDeDois = funcao (n) { retorna n ** 2 }
+escreva(v.mapear(funcaoPotenciasDeDois))
+
+bind("#botao-alerta", "click", funcao () {
+  alert("Evento de DOM acionado por Delégua!")
+})
+    </script>
+
+    <script src="./vendor/delegua.js"></script>
+    <script src="./dist/delegua-script.js"></script>
+    <script>
+      const saida = document.getElementById("saida");
+
+      window
+        .delegua({
+          ids: ["exemplo-principal"],
+          autoIniciar: false,
+          saida: (texto) => {
+            if (!saida) return;
+            saida.textContent += texto + "\n";
+          },
+        })
+        .then((resultados) => {
+          const falhas = resultados.filter((r) => !r.sucesso);
+          if (falhas.length > 0) {
+            console.error("Falhas Delégua:", falhas);
+          }
+        });
+    </script>
+  </body>
+</html>
